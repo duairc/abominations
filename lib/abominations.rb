@@ -27,7 +27,7 @@ class Object
 		class << self; self; end
 	end
 
-	def module_name do
+	def module_name
 		self.class.to_s.split(/::/).first.to_sym
 	end
 
