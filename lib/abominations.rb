@@ -26,12 +26,28 @@ class Object
 	def metaclass
 		class << self; self; end
 	end
+
+	def module_name do
+		self.class.to_s.split(/::/).first.to_sym
+	end
+
+	def instance_variables_hash
+		instance_variables.map{|n| [n, instance_variable_get(n)]}.to_hash
+	end
 end
 
 class Module
 	def const_get_full(name)
 		first, rest = name.to_s.split(/::/, 2)
 		rest ? const_get(first).const_get_full(rest) : const_get(first)
+	end
+
+	def constants_hash
+		constants.map{|n| [n, const_get(n)]}.to_hash
+	end
+
+	def class_variables_hash
+		class_variables.map{|n| [n, class_variable_get(n)]}.to_hash
 	end
 end
 
@@ -62,19 +78,17 @@ end
 
 module Abominations::JustLikeInheritance
 	def self.included(base)
+		instance = instance_variables_hash
+		klass = class_variables_hash
+
 		base.metaclass.class_eval do
 			define_method(:included) do |base|
 				metaclass.metaclass.instance_variable_get(:@blocks).each do |block|
 					base.metaclass.class_eval(&block)
 				end
 
-				instance_variables.each do |name|
-					instance_variable_set(name, instance_variable_get(name))
-				end
-
-				class_variables.each do |name|
-					class_variable_set(name, class_variable_get(name))
-				end
+				instance.each{|name, value| instance_variable_set(name, value)}
+				klass.each{|name, value| class_variable_set(name, value)}
 			end
 		end
 
